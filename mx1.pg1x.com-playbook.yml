@@ -1,0 +1,56 @@
+- hosts: mail
+#  var: 
+  remote_user: wnoguchi
+  become: yes
+  tasks:
+  - name: install postfix
+    yum: name=postfix state=present
+  - name: install dovecot
+    yum: name=dovecot state=present
+  - name: install mariadb-server
+    yum: name=mariadb-server state=present
+  - name: install dovecot-mysql
+    yum: name=dovecot-mysql state=present
+    notify:
+      - reload dovecot
+  - name: install php packages
+    yum: name={{item}} state=present
+    with_items:
+      - php
+      - php-fpm
+      - php-mysql
+      - php-mcrypt
+  - name: install epel-release
+    yum: name=epel-release state=present
+  - name: install nginx
+    yum: name=nginx state=present
+    notify:
+      - reload nginx
+      - reload php-fpm
+  - copy: src=etc/{{item}} dest=/etc/{{item}} owner=root group=root mode=0644
+    with_items:
+      - php.ini
+      - php-fpm.conf
+    notify:
+      - reload php-fpm
+  - name: start services
+    service: name={{item}} state=started
+    with_items:
+      - postfix
+      - dovecot
+      - mariadb
+      - nginx
+      - php-fpm
+  handlers:
+#  - name: reload httpd
+#    service: name=httpd state=reloaded
+  - name: reload postfix
+    service: name=postfix state=reloaded
+  - name: reload dovecot
+    service: name=dovecot state=reloaded
+  - name: reload mariadb
+    service: name=mariadb state=restart
+  - name: reload nginx
+    service: name=nginx state=reloaded
+  - name: reload php-fpm
+    service: name=php-fpm state=reloaded
