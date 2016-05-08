@@ -29,4 +29,5 @@ Thumbs.db
 ~$*
 # Vagrant specific
 .vagrant/
+/secret.yml
 

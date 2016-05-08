@@ -1,0 +1,4 @@
+---
+mail_db_host: localhost
+mail_db_user: postfix
+mail_db_dbname: postfix

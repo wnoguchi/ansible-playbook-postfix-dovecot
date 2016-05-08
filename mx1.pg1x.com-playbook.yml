@@ -1,5 +1,9 @@
+---
 - hosts: mail
 #  var: 
+  vars_files:
+    - config.yml
+    - secret.yml
   remote_user: wnoguchi
   become: yes
   tasks:
@@ -27,12 +31,34 @@
     notify:
       - reload nginx
       - reload php-fpm
+
   - copy: src=etc/{{item}} dest=/etc/{{item}} owner=root group=root mode=0644
     with_items:
       - php.ini
       - php-fpm.conf
     notify:
       - reload php-fpm
+
+  - group: name=vusers gid=10000 state=present
+  - user: name=vusers comment="Virtual Mail User" uid=10000 group=vusers state=present
+
+  - name: Postfix Configuration
+    template: src=etc/postfix/{{item}} dest=/etc/postfix/{{item}} owner=root group=root mode=0644
+    with_items:
+      - main.cf
+      - master.cf
+      - mysql_virtual_alias_maps.cf
+      - mysql_virtual_domains_maps.cf
+      - mysql_virtual_mailbox_limit_maps.cf
+      - mysql_virtual_mailbox_maps.cf
+    notify:
+      - reload postfix
+#  - name: Dovecot Configuration
+#    template: src=etc/dovecot/{{item}} dest=/etc/dovecot/{{item}} owner=root group=root mode=0644
+#    with_items:
+#      - 
+#    notify:
+#      - reload dovecot
   - name: start services
     service: name={{item}} state=started
     with_items:
@@ -41,6 +67,7 @@
       - mariadb
       - nginx
       - php-fpm
+
   handlers:
 #  - name: reload httpd
 #    service: name=httpd state=reloaded
